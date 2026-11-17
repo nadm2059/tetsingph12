@@ -1,0 +1,68 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String
+  points    Int      @default(340)
+  badges    String[] @default(["New Student", "Campus Helper"])
+  createdAt DateTime @default(now())
+  posts     MarketplaceItem[]
+  rsvps     EventRSVP[]
+}
+
+model SafeMeetupZone {
+  id          String   @id @default(uuid())
+  zoneName    String   @unique
+  description String
+  items       MarketplaceItem[]
+}
+
+model MarketplaceItem {
+  id             String         @id @default(uuid())
+  sellerId       String
+  seller         User           @relation(fields: [sellerId], references: [id])
+  title          String
+  description    String
+  price          Float          // $0.00 for free giveaway items
+  category       String         // textbooks, electronics, furniture, other
+  imageUrl       String
+  safeMeetupZoneId String
+  safeMeetupZone SafeMeetupZone @relation(fields: [safeMeetupZoneId], references: [id])
+  createdAt      DateTime       @default(now())
+}
+
+model StudentOrganization {
+  id          String        @id @default(uuid())
+  orgName     String        @not
+  email       String
+  discordLink String
+  events      CampusEvent[]
+}
+
+model CampusEvent {
+  id           String              @id @default(uuid())
+  orgId        String
+  organization StudentOrganization @relation(fields: [orgId], references: [id])
+  eventName    String
+  eventDate    DateTime
+  location     String
+  rsvps        EventRSVP[]
+}
+
+model EventRSVP {
+  id      String      @id @default(uuid())
+  eventId String
+  event   CampusEvent @relation(fields: [eventId], references: [id])
+  userId  String
+  user    User        @relation(fields: [userId], references: [id])
+  status  String      @default("Attending")
+}
+
